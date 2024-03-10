@@ -15,8 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phone')->nullable();
+            $table->string('city');
+            $table->date('birthdate');
+            $table->integer('age');
+            $table->enum('gender',['ذكر','أنثى']);
+            $table->enum('marital_status',['متزوج','غير متزوج']);
             $table->rememberToken();
             $table->timestamps();
         });

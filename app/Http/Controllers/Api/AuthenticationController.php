@@ -64,7 +64,7 @@ class AuthenticationController extends Controller
         return response(['error' => 'Unauthorized'], 401);
     }
 
-//==================   ForgetPassword & reset =================================================
+//==================   ForgetPassword & reset ======================
 
     public function forgotPassword(Request $request)
     {

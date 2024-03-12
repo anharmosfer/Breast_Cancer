@@ -17,7 +17,9 @@ class ProfileController extends Controller
         $user->update($request->validated());
         return UserResource::make($user);
 
+
         
+
     }
 
 

@@ -1,14 +1,13 @@
 <?php
 
+use App\Enums\GenderEnum;
+use App\Enums\MaritalStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -19,17 +18,13 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('city');
             $table->date('birthdate');
-            $table->integer('age');
-            $table->enum('gender',['ذكر','أنثى']);
-            $table->enum('marital_status',['متزوج','غير متزوج']);
+            $table->enum('gender',array_column(GenderEnum::cases(), 'value'));
+            $table->enum('marital_status',array_column(MaritalStatusEnum::cases(), 'value'));
+            $table->timestamp("verified_at")->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

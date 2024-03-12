@@ -1,134 +1,124 @@
 <?php
 
-namespace App\Http\Controllers;
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\VerifyRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Validation\Rules\Password as RulesPassword;
+
+
 
 class AuthenticationController extends Controller
 {
-    // public function get(){
-
-    //     $users = User::get();
-    //     $msg = ["ok"];
-    //     return response($users , $msg);
-    // }
-
-
-    public function registerUser(Request $request)
+    public function register(StoreUserRequest $request)
     {
-        // Validation rules for the request
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:20',
-            'city' => 'required|string|max:255',
-            'birthdate' => 'required|date',
-            'age' => 'required|integer',
-            'gender' => 'required|in:ذكر,أنثى',
-            'marital_status' => 'required|in:متزوج,غير متزوج',
-        ]);
+        $data = $request->validated();
+        $user = DB::transaction(fn() => User::create($data));
+        return UserResource::make($user);
+    }
 
-        // If validation fails,  return error response
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+    public function verify(VerifyRequest $request)
+    {
+        $credentials = $request->validated();
+
+        $user = User::query()->firstWhere('email', $credentials['email']);
+
+        if (!$user||$credentials['code']!="123456") {
+            return response(['message' => 'Invalid email or code'], 401);
+        }
+        $token = $user->createToken('AuthToken')->plainTextToken;
+
+        return response([
+            'user' => UserResource::make($user),
+            'token' => $token
+        ]);
+    }
+
+    public function login(LoginRequest $request)
+    {
+        $credentials = $request->validated();
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            $token = $user->createToken('AuthToken')->plainTextToken;
+
+            return response([
+                'user' => UserResource::make($user),
+                'token' => $token
+            ]);
         }
 
-        // Create the user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'phone' => $request->phone,
-            'city' => $request->city,
-            'birthdate' => $request->birthdate,
-            'age' => $request->age,
-            'gender' => $request->gender,
-            'marital_status' => $request->marital_status,
+        return response(['error' => 'Unauthorized'], 401);
+    }
+
+//==================   ForgetPassword & reset =================================================
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
         ]);
 
-        // Return success response
-        return response()->json(['message' => 'User registered successfully'], 201);
-    }
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
 
-//======================================================
-
-public function login(Request $request)
-{
-    // Validate request data
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|string|email',
-        'password' => 'required|string',
-        'phone' => 'required|string|max:20',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    // Find the user by email and phone
-    $user = User::where('email', $request->email)
-                ->where('phone', $request->phone)
-                ->first();
-
-    // If user not found or password doesn't match, return error response
-    if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-
-    // If user and password match, return success response
-    return response()->json(['message' => 'User logged in successfully'], 200);
-}
-//================================================================================
-
-public function forgotPassword(Request $request)
-{
-    // Validation rules for the request
-    $validator = Validator::make($request->all(), [
-        'phone' => 'required|string|max:20',
-    ]);
-
-    // If validation fails, return error response
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-
-    $user = User::where('phone', $request->phone)->first();
-
-
-    if (!$user) {
-        return response()->json(['error' => 'User not found'], 404);
-    }
-
-
-    $verificationCode = rand(100000, 999999);
-
-
-    $user->verification_code = $verificationCode;
-    $user->save();
-
-
-    return response()->json(['verification_code' => $verificationCode], 200);
-}
-
-
-}
-/*
-
-public function login(Request $request)
-    {
-        $user = User::where('email',$request->email)->first();
-        if(!Hash::check($request->password , $user->password)){
-            return'cannot login';
-
+        if ($status == Password::RESET_LINK_SENT) {
+            return [
+                'status' => __($status)
+            ];
         }
-        // $token = $user->createToken($user->name);
-        // return response()->json(['token'=>$token->plainTextToken , 'user'=>$user]);
+
+        throw ValidationException::withMessages([
+            'email' => [trans($status)],
+        ]);
     }
 
-*/
+    public function reset(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', RulesPassword::defaults()],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user) use ($request) {
+                $user->forceFill([
+                    'password' => Hash::make($request->password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                $user->tokens()->delete();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status == Password::PASSWORD_RESET) {
+            return response([
+                'message'=> 'Password reset successfully'
+            ]);
+        }
+
+        return response([
+            'message'=> __($status)
+        ], 500);
+
+    }
+
+}

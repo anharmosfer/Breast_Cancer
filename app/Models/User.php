@@ -8,7 +8,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\ResetPasswordNotification;
+
+
+
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -42,4 +50,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+
+//=======================  sendPasswordResetNotification  =================
+
+      public function sendPasswordResetNotification($token)
+{
+
+    $url = 'https://spa.test/reset-password?token=' . $token;
+
+    $this->notify(new ResetPasswordNotification($url));
+}
+
 }

@@ -1,23 +1,59 @@
+
 <?php
 
 use App\Http\Controllers\Api\AuthenticationController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthenticationControllerX;
 use Illuminate\Support\Facades\Route;
 
-//================================================ 2
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 
 
 
 
 
+Route::post('register',[AuthenticationController::class, 'register']);
 Route::post('/login',[AuthenticationController::class, 'login']);
-Route::post('/registerUser',[AuthenticationController::class, 'registerUser']);
-Route::post('/forgotPassword',[AuthenticationController::class, 'forgotPassword']);
-// Route::get( '/get',[AuthenticationController::class, 'get']);
+Route::post('/verify',[AuthenticationController::class, 'verify']);
+
+
+Route::middleware('auth:sanctum','verified')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+Route::post('email/verification-notification', [EmailVerificationController::class, 'sendVerificationEmail'])->middleware('auth:sanctum');
+Route::get('verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify')->middleware('auth:sanctum');
+
+Route::post('forgot-password', [NewPasswordController::class, 'forgotPassword']);
+Route::post('reset-password', [NewPasswordController::class, 'reset']);
+
+
+
+
+
+
+
+
+
+// use App\Http\Controllers\Api\AuthenticationController;
+// use Illuminate\Http\Request;
+// use Illuminate\Support\Facades\Route;
+
+// //================================================ 2
+// use App\Models\User;
+// use Illuminate\Support\Facades\Hash;
+// use Illuminate\Validation\ValidationException;
+
+
+
+
+
+
+// Route::post('/login',[AuthenticationController::class, 'login']);
+// Route::post('/registerUser',[AuthenticationController::class, 'registerUser']);
+// Route::put('/forgotPassword',[AuthenticationController::class, 'forgotPassword']);
+
+
+// Route::get( '/users',[AuthenticationController::class, 'get']);
 
 
 //===================================================================================== 2

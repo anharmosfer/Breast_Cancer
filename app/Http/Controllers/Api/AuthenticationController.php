@@ -55,7 +55,6 @@ class AuthenticationController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $token = $user->createToken('AuthToken')->plainTextToken;
-
             return response([
                 'user' => UserResource::make($user),
                 'token' => $token

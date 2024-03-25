@@ -10,24 +10,26 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 
+
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Notifications\ResetPasswordNotification;
+
+
 
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
-
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'city',
-        'birthdate',
-        'gender',
-        'age',
-        'marital_status',
+'name',
+'email',
+'password',
+'phone',
+'city',
+'birthdate',
+'gender',
+'age',
+'marital_status',
     ];
 
     protected $hidden = [
@@ -40,23 +42,21 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
     ];
 
-    protected static function booted()
-    {
-        static::creating(function ($user) {
-            // Generate a random password if not provided
-            if (empty($user->password)) {
-                $user->password = Str::random(12); // Change the length as needed
-            }
-        });
-    }
+
 //=======================  sendPasswordResetNotification  =================
 
-    public function sendPasswordResetNotification($token)
-    {
+      public function sendPasswordResetNotification($token)
+{
 
-        $url = 'https://spa.test/reset-password?token=' . $token;
+    $url = 'https://spa.test/reset-password?token=' . $token;
 
-        $this->notify(new ResetPasswordNotification($url));
-    }
+    $this->notify(new ResetPasswordNotification($url));
+}
+
+public function criterias()
+{
+    return $this->belongsToMany(related: Criteria::class, table: 'user__c_s');
+
+}
 
 }

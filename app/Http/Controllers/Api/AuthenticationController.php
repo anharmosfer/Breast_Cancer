@@ -13,6 +13,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 
 
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -20,15 +21,22 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as RulesPassword;
 
+use Carbon\Carbon; // استيراد مكتبة Carbon لإدارة التواريخ
+
 
 
 class AuthenticationController extends Controller
 {
+
+
     public function register(StoreUserRequest $request)
     {
         $data = $request->validated();
         $user = DB::transaction(fn() => User::create($data));
         return UserResource::make($user);
+
+
+
     }
 
     public function verify(VerifyRequest $request)
@@ -104,5 +112,25 @@ class AuthenticationController extends Controller
         ], 500);
 
     }
+
+// =======================================
+
+    public function logout()
+    {
+        // تسجيل خروج المستخدم
+        auth()->user()->tokens()->delete();
+        return response([
+            'message' => 'logout success'
+        ], 200);
+
+
+    }
+
+    public function index(){
+        $user = User::find(1);
+        return $user;
+    }
+
+
 
 }

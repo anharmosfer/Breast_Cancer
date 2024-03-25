@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('_answers_text', function (Blueprint $table) {
+        Schema::create('user__c_s', function (Blueprint $table) {
             $table->id();
+            $table->foreignId(column: 'user_id')->constrained();
+            $table->foreignId(column: 'criteria_id')->constrained();
             $table->timestamps();
-
-
-            
         });
     }
 
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('_answers_text');
+        Schema::dropIfExists('user__c_s');
     }
 };

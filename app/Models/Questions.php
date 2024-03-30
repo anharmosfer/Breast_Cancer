@@ -9,11 +9,24 @@ class Questions extends Model
 {
     use HasFactory;
 
-    
+    protected $fillable = [
+        'name',
+        'gender',
+        'marital_status',
+        'birthdate',
+        'rate',
+    ];
 
-    public function criterias()
-{
-    return $this->belongsToMany(related: Criteria::class, table: 'questions__c_s');
+    protected $casts = [
+        'gender' => 'json',
+        'marital_status' => 'json',
+        'birthdate' => 'json',
+    ];
 
 }
-}
+
+
+
+
+
+

@@ -1,5 +1,5 @@
 <?php
-
+//  Backend
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -20,23 +20,23 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as RulesPassword;
-
-use Carbon\Carbon; // استيراد مكتبة Carbon لإدارة التواريخ
-
+use function Monolog\debug;
 
 
 class AuthenticationController extends Controller
 {
 
-
     public function register(StoreUserRequest $request)
     {
+
         $data = $request->validated();
         $user = DB::transaction(fn() => User::create($data));
-        return UserResource::make($user);
-
-
-
+        $token = $user->createToken(User::USER_TOKEN);
+        //return UserResource::make($user);
+        return $this->success([
+            'user' => $user,
+            'token' => $token->plainTextToken,
+        ], 'User has been register successfully.');
     }
 
     public function verify(VerifyRequest $request)
@@ -63,10 +63,10 @@ class AuthenticationController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $token = $user->createToken('AuthToken')->plainTextToken;
-            return response([
+            return $this->success([
                 'user' => UserResource::make($user),
                 'token' => $token
-            ]);
+            ], 'User has been register successfully.');
         }
 
         return response(['error' => 'Unauthorized'], 401);

@@ -2,13 +2,15 @@
 <?php
 
 
-use App\Http\Controllers\ControlPanelApi\AdminController;
 use App\Http\Controllers\Api\AuthenticationController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\QuestionsController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\ControlPanelApi\AdminController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+
 
 
 
@@ -21,16 +23,25 @@ use Illuminate\Support\Facades\Route;
 
 // Route::post('User',AuthenticationController::class);
 Route::get('users', [UserController::class, 'index']);
-Route::get('/find/{id}/user',function($id) {
-    $criteria = User::find($id)->criteria;
-    return $criteria;
-});
 
 
-Route::post('register',[AuthenticationController::class, 'register']);
-Route::post('/login',[AuthenticationController::class, 'login']);
-Route::post('/verify',[AuthenticationController::class, 'verify']);
-Route::post('forgot-password', [AuthenticationController::class, 'forgotPassword']);
+Route::prefix('auth')
+    ->as('auth.')
+    ->group(function () {
+        Route::post('login', [AuthenticationController::class, 'login'])->name('login');
+        Route::post('register', [AuthenticationController::class, 'register'])->name('register');
+        Route::post('login_with_token', [AuthenticationController::class, 'loginWithToken'])
+            ->middleware("auth:sanctum")
+            ->name('login_with_token');
+        Route::get('logout', [AuthenticationController::class, 'logout'])
+            ->middleware("auth:sanctum")
+            ->name('logout');
+    });
+
+// Route::post('register',[AuthenticationController::class, 'register']);
+// Route::post('/login',[AuthenticationController::class, 'login']);
+// Route::post('/verify',[AuthenticationController::class, 'verify']);
+// Route::post('forgot-password', [AuthenticationController::class, 'forgotPassword']);
 //Route::post('/reset',[AuthenticationController::class, 'verify']);
 
 
@@ -43,12 +54,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
 //====================================================================================================
 
+Route::post('/questions', [QuestionsController::class, 'store']);
 
-
-Route::post('/calculate-age-and-store-criteria', [UserController::class, 'calculateAgeAndStoreCriteria']);
-Route::get('/show-user-criteria-and-questions', [UserController::class, 'showUserCriteriaAndQuestions']);
-
-
+Route::get('/show-questions', [UserController::class, 'showQuestions']);
 
 
 
@@ -56,6 +64,10 @@ Route::get('/show-user-criteria-and-questions', [UserController::class, 'showUse
 
 
 
+
+
+
+//=========================================================================================================
 Route::post('email/verification-notification', [EmailVerificationController::class, 'sendVerificationEmail'])->middleware('auth:sanctum');
 Route::get('verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify')->middleware('auth:sanctum');
 
